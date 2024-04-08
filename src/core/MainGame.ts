@@ -2,6 +2,9 @@ import * as PIXI from 'pixi.js';
 import { Tetromino, IShape, LShape, JShape, OShape, TShape, SShape, ZShape } from './tetromino';
 export class Game {
     score: number;
+    level: number;
+    baseFallSpeed: number;
+    scoreToNextLevel: number;
     boardWidth: number;
     boardHeight: number;
     currentBoard: number[][];
@@ -11,9 +14,13 @@ export class Game {
     blockSize: number;
     padding: number;
     blockColors: number[];
+    gameOverSoundPlayed: boolean;
 
     constructor() {
         this.score = 0;
+        this.level = 1;
+        this.baseFallSpeed = 800; 
+        this.scoreToNextLevel = 100; 
         this.boardWidth = 10;
         this.boardHeight = 23;
         this.currentBoard = Array.from({ length: this.boardHeight }, () => Array(this.boardWidth).fill(0));
@@ -23,6 +30,7 @@ export class Game {
         document.body.appendChild(this.app.view);
         this.blockSize = 25;
         this.padding = 4;
+        this.gameOverSoundPlayed = false;
         this.blockColors = [
             0xFF0000, // Đỏ
             0x00FF00, // Xanh lá cây
@@ -37,6 +45,11 @@ export class Game {
         ];
     }
     draw() {
+        const previousScoreText = this.app.stage.getChildByName("scoreText");
+        if (previousScoreText) {
+            this.app.stage.removeChild(previousScoreText);
+        }
+
         const graphics = new PIXI.Graphics();
         this.app.stage.addChild(graphics);
         graphics.clear();
@@ -52,27 +65,25 @@ export class Game {
                 graphics.drawRect(this.padding * 2 + j * (this.blockSize + this.padding), this.padding * 2 + (i - 3) * (this.blockSize + this.padding), this.blockSize, this.blockSize);
                 graphics.endFill();
             }
-        }
+        } 
         const gameTitle = PIXI.Sprite.from('../assets/logo_tetris.png');
         gameTitle.position.set(325, 10);
         gameTitle.width = 200;
         gameTitle.height = 50;
         this.app.stage.addChild(gameTitle);
+
         const nextText = new PIXI.Text('Next:', { fontSize: '28px', fill: '#87CEEB' });
         nextText.position.set(310, 100);
         this.app.stage.addChild(nextText);
 
-        const scoreText = new PIXI.Text('Scores:', { fontSize: '25px', fill: '#87CEEB' });
-        scoreText.position.set(310, 300);
-        this.app.stage.addChild(scoreText);
-
         const Level = new PIXI.Text('Level:', { fontSize: '25px', fill: '#87CEEB' });
-        Level.position.set(310, 330);
+        Level.position.set(310, 360);
         this.app.stage.addChild(Level);
 
-        const scoreValue = new PIXI.Text(this.score.toString(), { fontSize: '28px', fill: '#87CEEB' });
-        scoreValue.position.set(410, 300);
-        this.app.stage.addChild(scoreValue);
+        const scoreText = new PIXI.Text('Scores: ' + this.score.toString(), { fontSize: '25px', fill: '#87CEEB' });
+        scoreText.name = "scoreText"; 
+        scoreText.position.set(310, 330); 
+        this.app.stage.addChild(scoreText);
 
         const stage = PIXI.Sprite.from('../assets/button_reset_up.png');
         stage.position.set(340, 525);
@@ -84,24 +95,23 @@ export class Game {
         stage.on('click', () => {
             location.reload();
         });
-
     }
     randomTetromino(): Tetromino {
-        const randNum = Math.floor(Math.random() * 7);
+        const randNum = Math.floor(Math.random() * 2);
         switch (randNum) {
+            // case 0:
+            //     return new LShape(1, 4);
+            // case 1:
+            //     return new JShape(1, 4);
             case 0:
-                return new LShape(1, 4);
-            case 1:
-                return new JShape(1, 4);
-            case 2:
                 return new OShape(2, 4);
-            case 3:
-                return new TShape(2, 4);
-            case 4:
-                return new SShape(2, 4);
-            case 5:
-                return new ZShape(2, 4);
-            case 6:
+            // case 3:
+            //     return new TShape(2, 4);
+            // case 4:
+            //     return new SShape(2, 4);
+            // case 5:
+            //     return new ZShape(2, 4);
+            case 1:
                 return new IShape(0, 4);
             default:
                 throw new Error("Invalid Tetromino");
@@ -148,15 +158,17 @@ export class Game {
                     this.dropTetromino();
                     break;
             }
+          
             this.updateCurrentBoard();
             this.draw();
+            
         });
 
         setInterval(() => {
             this.progress();
             this.updateCurrentBoard();
             this.draw();
-        }, 800);
+        }, this.baseFallSpeed);
     }
 
     dropTetromino() {
@@ -168,19 +180,24 @@ export class Game {
     progress() {
         if (this.canTetrominoFall()) {
             this.currentTetromino.fall();
+            this.fallBlockSound();
         } else {
             this.updateLandedBoard();
             this.checkAndClearFilledRows();
             this.currentTetromino = this.randomTetromino();
             if (!this.canTetrominoFall()) {
-                // console.log("Game Over!");
                 this.showGameOverDialog();
+                // console.log("Game Over!");
                 return;
             }
         }
+        this.updateCurrentBoard();
+        this.draw();
     }
+    
 
     showGameOverDialog() {
+        this.playGameOverSound();
         // Tạo hộp thoại Game Over
         const dialog = new PIXI.Graphics();
         dialog.beginFill(0x000000, 0.5);
@@ -208,6 +225,7 @@ export class Game {
         reloadButton.on('pointerdown', () => {
             location.reload();
         });
+       
 
     }
     canTetrominoFall(): boolean {
@@ -251,6 +269,7 @@ export class Game {
         }
     }
 
+
     checkAndClearFilledRows() {
         let clearedRowCount = 0;
         for (let i = this.boardHeight - 1; i >= 0; i--) {
@@ -268,16 +287,48 @@ export class Game {
             }
         }
         if (clearedRowCount > 0) {
-            this.updateScore(clearedRowCount);
+            this.Updatescore(clearedRowCount);
+            this.checkAndClearFilledRows();
+            
         }
     }
-
+    Updatescore(clearedRowCount: number) {
+        let scoreIncrement = 0;
+        if (clearedRowCount === 1) {
+            scoreIncrement = 100;
+        } else if (clearedRowCount === 2) {
+            scoreIncrement = 300;
+        } else if (clearedRowCount === 3) {
+            scoreIncrement = 600;
+        } else if (clearedRowCount >= 4) {
+            scoreIncrement = 800;
+        }
+        this.score += scoreIncrement;
+    }
+    
     clearRow(row: number) {
         for (let j = 0; j < this.boardWidth; j++) {
             this.landedBoard[row][j] = 0;
         }
+        this.playEatSound();
     }
 
+    playEatSound() {
+       
+        const audio = new Audio('../assets/audio/258020__kodack__arcade-bleep-sound.mp3');
+        audio.play();
+    }
+    playGameOverSound() {
+        if (!this.gameOverSoundPlayed) {
+            const audio = new Audio('../assets/audio/251461__joshuaempyre__arcade-music-loop.mp3');
+            audio.play();
+            this.gameOverSoundPlayed = true;
+        }
+    }
+    fallBlockSound() {
+        const audio = new Audio('../assets/audio/263006__dermotte__giant-step-1.mp3');
+        audio.play();
+    }
     moveBlocksDown(clearedRow: number) {
         for (let i = clearedRow - 1; i >= 0; i--) {
             for (let j = 0; j < this.boardWidth; j++) {
@@ -287,16 +338,17 @@ export class Game {
         }
     }
 
-    updateScore(clearedRowCount: number) {
-        // Cập nhật điểm số tại đây, ví dụ:
-        this.score += clearedRowCount * 100;
-    }
+    // updateScore(clearedRowCount: number) {
+    //     this.score += clearedRowCount * 100;
+    //     // this.level = Math.floor(this.score / 100) + 1; // Mỗi 1000 điểm tăng 1 cấp độ
+    // }
 }
 
 export function initializeGame() {
     const game = new Game();
     game.updateCurrentBoard();
     game.draw();
+    // game.drawNextTetromino();
     game.play();
 
 }
