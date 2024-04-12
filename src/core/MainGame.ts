@@ -26,7 +26,7 @@ export class Game {
         this.currentBoard = Array.from({ length: this.boardHeight }, () => Array(this.boardWidth).fill(0));
         this.landedBoard = Array.from({ length: this.boardHeight }, () => Array(this.boardWidth).fill(0));
         this.currentTetromino = this.randomTetromino();
-        this.app = new PIXI.Application({ width: 560, height: 600, backgroundColor: 0xFFFFFF });
+        this.app = new PIXI.Application({ width: 560, height: 700, backgroundColor: 0xFFFFFF });
         document.body.appendChild(this.app.view);
         this.blockSize = 25;
         this.padding = 4;
@@ -66,35 +66,105 @@ export class Game {
                 graphics.endFill();
             }
         } 
+        this.app.renderer.resize(560, 700);
         const gameTitle = PIXI.Sprite.from('../assets/logo_tetris.png');
         gameTitle.position.set(325, 10);
         gameTitle.width = 200;
         gameTitle.height = 50;
         this.app.stage.addChild(gameTitle);
 
-        const nextText = new PIXI.Text('Next:', { fontSize: '28px', fill: '#87CEEB' });
+        // Text NEXT
+        const nextTextStyle = new PIXI.TextStyle({
+            fontFamily: 'Press Start 2P',
+            fontSize: 18,
+            fill: '##000000',
+            fontWeight: 'bold',
+        });
+
+        const nextText = new PIXI.Text('Next:', nextTextStyle);
         nextText.position.set(310, 100);
         this.app.stage.addChild(nextText);
 
-        const Level = new PIXI.Text('Level:', { fontSize: '25px', fill: '#87CEEB' });
-        Level.position.set(310, 360);
-        this.app.stage.addChild(Level);
+        // Text Level
+        const levelTextStyle = new PIXI.TextStyle({
+            fontFamily: 'Press Start 2P',
+            fontSize: 18,
+            fill: '##000000',
+            fontWeight: 'bold',
+        });
 
-        const scoreText = new PIXI.Text('Scores: ' + this.score.toString(), { fontSize: '25px', fill: '#87CEEB' });
-        scoreText.name = "scoreText"; 
-        scoreText.position.set(310, 330); 
+        const levelText = new PIXI.Text('Level:', levelTextStyle);
+        levelText.position.set(310, 390);
+        this.app.stage.addChild(levelText);
+
+        // Text Score
+        const scoreTextStyle = new PIXI.TextStyle({
+            fontFamily: 'Press Start 2P',
+            fontSize: 18,
+            fill: '##000000',
+            fontWeight: 'bold',
+        });
+
+        const scoreText = new PIXI.Text('Scores: ', scoreTextStyle);
+        scoreText.name = "scoreText";
+        scoreText.position.set(310, 360);
         this.app.stage.addChild(scoreText);
 
-        const stage = PIXI.Sprite.from('../assets/button_reset_up.png');
-        stage.position.set(340, 525);
+        // button play game
+        const stage = PIXI.Sprite.from('../assets/R.png');
+        stage.position.set(340, 425);
         stage.width = 175;
-        stage.height = 50;
+        stage.height = 55;
         this.app.stage.addChild(stage);
         stage.interactive = true;
         stage.buttonMode = true;
         stage.on('click', () => {
             location.reload();
         });
+
+        // button pause game
+        const replay = PIXI.Sprite.from('../assets/replay.png');
+        replay.position.set(340, 490);
+        replay.width = 173
+        replay.height = 60;
+        this.app.stage.addChild(replay);
+        replay.interactive = true;
+        replay.buttonMode = true;
+        replay.on('click', () => {
+            location.reload();
+        });
+        // button pause game
+        const pause = PIXI.Sprite.from('../assets/pause.png');
+        pause.position.set(333, 560);
+        pause.width = 190;
+        pause.height = 70;
+        this.app.stage.addChild(pause);
+        pause.interactive = true;
+        pause.buttonMode = true;
+        pause.on('click', () => {
+            location.reload();
+        });
+        //  button exit game
+        const exit = PIXI.Sprite.from('../assets/exit.png');
+        exit.position.set(320, 628);
+        exit.width = 220;
+        exit.height = 80;
+        this.app.stage.addChild(exit);
+        exit.interactive = true;
+        exit.buttonMode = true;
+        exit.on('click', () => {
+            location.reload();
+        });
+
+         //  button exit game
+         const arow = PIXI.Sprite.from('../assets/aroww.png');
+         arow.position.set(20, 580);
+         arow.width = 200;
+         arow.height = 200;
+         this.app.stage.addChild(arow);
+         arow.interactive = true;
+         arow.buttonMode = true;
+        
     }
     randomTetromino(): Tetromino {
         const randNum = Math.floor(Math.random() * 2);
@@ -209,7 +279,7 @@ export class Game {
         // Thêm văn bản "Game Over!"
         const gameOverText = new PIXI.Text('Game Over!', { fontFamily: 'Arial', fontSize: 43, fill: 0xFF0000, fontWeight: 'bold' });
         gameOverText.anchor.set(0.5);
-        gameOverText.position.set(430, 400);
+        gameOverText.position.set(430, 410);
         dialog.addChild(gameOverText);
 
 
@@ -288,20 +358,23 @@ export class Game {
         }
         if (clearedRowCount > 0) {
             this.Updatescore(clearedRowCount);
+            this.Updatescore(0);
             this.checkAndClearFilledRows();
-            
+
+        } else {
+            return;
         }
     }
     Updatescore(clearedRowCount: number) {
         let scoreIncrement = 0;
-        if (clearedRowCount === 1) {
+        if (clearedRowCount  === 1) {
             scoreIncrement = 100;
-        } else if (clearedRowCount === 2) {
-            scoreIncrement = 300;
-        } else if (clearedRowCount === 3) {
-            scoreIncrement = 600;
-        } else if (clearedRowCount >= 4) {
-            scoreIncrement = 800;
+        } else if (clearedRowCount  == 2) {
+            scoreIncrement = 200;
+        } else if (clearedRowCount  == 3) {
+            scoreIncrement = 200;
+        } else if (clearedRowCount === 4) {
+            scoreIncrement = 1000;
         }
         this.score += scoreIncrement;
     }
@@ -312,7 +385,7 @@ export class Game {
         }
         this.playEatSound();
     }
-
+// âm thanh của game
     playEatSound() {
        
         const audio = new Audio('../assets/audio/258020__kodack__arcade-bleep-sound.mp3');
@@ -338,10 +411,7 @@ export class Game {
         }
     }
 
-    // updateScore(clearedRowCount: number) {
-    //     this.score += clearedRowCount * 100;
-    //     // this.level = Math.floor(this.score / 100) + 1; // Mỗi 1000 điểm tăng 1 cấp độ
-    // }
+
 }
 
 export function initializeGame() {

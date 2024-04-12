@@ -6,7 +6,7 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-image: url('../assets/ground.png');
+    background-image: url('../assets/backg.png');
     background-size: cover; 
     background-position: center; 
     background-repeat: no-repeat; 
